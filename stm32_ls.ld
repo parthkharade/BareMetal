@@ -50,11 +50,61 @@ create an output section.
 
 Can place the output sections in specefic memories.
 
+Basically take similar sections from different output files
+and create a single output section.
+Then this output section can be placed in the memory segments 
+we have defined earlier.
 
 */
 
 SECTIONS
 {
     /*This section should include .text section of all input files*/
-    
+    .text :
+    {
+        /* ISR section from startup.o */
+        *(.isr_vector)
+        /* .text of main.o led.o startup.o */
+        *(.text) 
+        /* .rodata section from all files */
+        *(.rodata)
+        . = ALIGN(4); 
+        /*Word align the end of this section and update location counter*/
+         _etext = .; /*Store the location counter symbol value.*/
+    }>FLASH
+    /* >Vma AT> lma */
+    /* This section goes to the flash and is not present on the RAM
+    Hence VMA and LMA are the same */
+
+    .data :
+    {
+        _sdata = .;
+        start_of_data = 0x20000000;
+        *(.data)
+        . = ALIGN(4);
+        _edata = .;
+    }>SRAM AT>FLASH
+    /* Mention that Vma is SRAM and LMA is at flash */
+
+    .bss :
+    {
+        _sbss = .;
+        *(.bss)
+        *(COMMON)
+        /* The compiler places some intialised global data in the common 
+        section. We inlcude the common section here so that the data
+        makes it to the .bss section */
+        . = ALIGN(4);
+        _ebss = .;
+    }>SRAM
+
+    /* Location Counter : A symbol to keep track of section boundaries 
+        Should only be used in the SECTION Command
+        
+        Special Linker symbol denoted by "."
+        Incremented by the size of the location counter.
+
+        You can declare linker script symbols 
+        */
 }
+

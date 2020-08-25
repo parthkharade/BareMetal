@@ -4,7 +4,14 @@
 #define SRAM_SIZE   (128U * 1024U)
 #define SRAM_END    ((SRAM_START) + (SRAM_SIZE))
 #define STACK_START SRAM_END
-
+extern uint32_t _etext;
+extern uint32_t _sdata;
+extern uint32_t _edata;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
+//prototype of main
+int main(void);  
+// use the extern keyword to acess variables outside the current file.
 void Reset_Handler(void);
 void NMI_Handler 					(void) __attribute__ ((weak, alias("Default_Handler")));
 void HardFault_Handler 				(void) __attribute__ ((weak, alias("Default_Handler")));
@@ -109,8 +116,13 @@ void FPU_IRQHandler              	(void) __attribute__ ((weak, alias("Default_Ha
     (uint32_t)&MemManage_Handler,
     (uint32_t)&BusFault_Handler,
     (uint32_t)&UsageFault_Handler,
+    0,
+    0,
+    0,
+    0,
     (uint32_t)&SVC_Handler,
     (uint32_t)&DebugMon_Handler,
+    0,
     (uint32_t)&PendSV_Handler,
     (uint32_t)&SysTick_Handler,
     (uint32_t)&WWDG_IRQHandler,
@@ -213,10 +225,24 @@ void Default_Handler(void)
 void Reset_Handler(void)
 {
     //copy .data section to sram.
-    //init .bss section in the sram.
+    uint32_t size = &_edata - &_sdata;
+    uint8_t *pDst = (uint8_t *)&_sdata;
+    uint8_t *pSrc = (uint8_t *)&_etext;
 
+    for(uint32_t i =0;i<size;i++)
+    {
+        *pDst++=*pSrc++;
+    } 
+    // & used to refer to address 
     //to copy this data we need boundary // size information this is done from the linker script
 
+    //init .bss section in the sram.
+    size = &_ebss - &_sbss;
+    for(uint32_t i =0;i<size;i++)
+    {
+        *pDst++=0;
+    } 
+
     //call init for std if req (not req here)
-    //call main()
+    main();
 }
